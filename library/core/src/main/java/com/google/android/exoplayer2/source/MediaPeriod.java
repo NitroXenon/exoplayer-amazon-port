@@ -23,7 +23,7 @@ import java.io.IOException;
 /**
  * Loads media corresponding to a {@link Timeline.Period}, and allows that media to be read. All
  * methods are called on the player's internal playback thread, as described in the
- * {@link ExoPlayer} Javadoc.
+ * {@link com.google.android.exoplayer2.Player} Javadoc.
  */
 public interface MediaPeriod extends SequenceableLoader {
 
