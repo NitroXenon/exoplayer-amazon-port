@@ -21,6 +21,7 @@ import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
@@ -239,7 +240,7 @@ public final class SimpleExoPlayerView extends FrameLayout {
       controller = null;
       componentListener = null;
       overlayFrameLayout = null;
-      ImageView logo = new ImageView(context, attrs);
+      ImageView logo = new ImageView(context);
       if (Util.SDK_INT >= 23) {
         configureEditModeLogoV23(getResources(), logo);
       } else {
@@ -329,9 +330,9 @@ public final class SimpleExoPlayerView extends FrameLayout {
     if (customController != null) {
       this.controller = customController;
     } else if (controllerPlaceholder != null) {
-      // Note: rewindMs and fastForwardMs are passed via attrs, so we don't need to make explicit
-      // calls to set them.
-      this.controller = new PlaybackControlView(context, attrs);
+      // Propagate attrs as playbackAttrs so that PlaybackControlView's custom attributes are
+      // transferred, but standard FrameLayout attributes (e.g. background) are not.
+      this.controller = new PlaybackControlView(context, null, 0, attrs);
       controller.setLayoutParams(controllerPlaceholder.getLayoutParams());
       ViewGroup parent = ((ViewGroup) controllerPlaceholder.getParent());
       int controllerIndex = parent.indexOfChild(controllerPlaceholder);
@@ -379,9 +380,7 @@ public final class SimpleExoPlayerView extends FrameLayout {
   }
 
   /**
-   * Set the {@link SimpleExoPlayer} to use. The {@link SimpleExoPlayer#setTextOutput} and
-   * {@link SimpleExoPlayer#setVideoListener} method of the player will be called and previous
-   * assignments are overridden.
+   * Set the {@link SimpleExoPlayer} to use.
    * <p>
    * To transition a {@link SimpleExoPlayer} from targeting one view to another, it's recommended to
    * use {@link #switchTargetView(SimpleExoPlayer, SimpleExoPlayerView, SimpleExoPlayerView)} rather
@@ -397,8 +396,8 @@ public final class SimpleExoPlayerView extends FrameLayout {
     }
     if (this.player != null) {
       this.player.removeListener(componentListener);
-      this.player.clearTextOutput(componentListener);
-      this.player.clearVideoListener(componentListener);
+      this.player.removeTextOutput(componentListener);
+      this.player.removeVideoListener(componentListener);
       if (surfaceView instanceof TextureView) {
         this.player.clearVideoTextureView((TextureView) surfaceView);
       } else if (surfaceView instanceof SurfaceView) {
@@ -418,14 +417,23 @@ public final class SimpleExoPlayerView extends FrameLayout {
       } else if (surfaceView instanceof SurfaceView) {
         player.setVideoSurfaceView((SurfaceView) surfaceView);
       }
-      player.setVideoListener(componentListener);
-      player.setTextOutput(componentListener);
+      player.addVideoListener(componentListener);
+      player.addTextOutput(componentListener);
       player.addListener(componentListener);
       maybeShowController(false);
       updateForCurrentTrackSelections();
     } else {
       hideController();
       hideArtwork();
+    }
+  }
+
+  @Override
+  public void setVisibility(int visibility) {
+    super.setVisibility(visibility);
+    if (surfaceView instanceof SurfaceView) {
+      // Work around https://github.com/google/ExoPlayer/issues/3160
+      surfaceView.setVisibility(visibility);
     }
   }
 
@@ -668,10 +676,15 @@ public final class SimpleExoPlayerView extends FrameLayout {
   }
 
   /**
-   * Gets the view onto which video is rendered. This is either a {@link SurfaceView} (default)
-   * or a {@link TextureView} if the {@code use_texture_view} view attribute has been set to true.
+   * Gets the view onto which video is rendered. This is a:
+   * <ul>
+   *   <li>{@link SurfaceView} by default, or if the {@code surface_type} attribute is set to
+   *   {@code surface_view}.</li>
+   *   <li>{@link TextureView} if {@code surface_type} is {@code texture_view}.</li>
+   *   <li>{@code null} if {@code surface_type} is {@code none}.</li>
+   * </ul>
    *
-   * @return Either a {@link SurfaceView} or a {@link TextureView}.
+   * @return The {@link SurfaceView}, {@link TextureView} or {@code null}.
    */
   public View getVideoSurfaceView() {
     return surfaceView;
