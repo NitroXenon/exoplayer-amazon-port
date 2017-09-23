@@ -48,7 +48,7 @@ public final class SimpleCache implements Cache {
    * @param evictor The evictor to be used.
    */
   public SimpleCache(File cacheDir, CacheEvictor evictor) {
-    this(cacheDir, evictor, null);
+    this(cacheDir, evictor, null, false);
   }
 
   /**
@@ -75,10 +75,22 @@ public final class SimpleCache implements Cache {
    * @param encrypt When false, a plaintext index will be written.
    */
   public SimpleCache(File cacheDir, CacheEvictor evictor, byte[] secretKey, boolean encrypt) {
+    this(cacheDir, evictor, new CachedContentIndex(cacheDir, secretKey, encrypt));
+  }
+
+  /**
+   * Constructs the cache. The cache will delete any unrecognized files from the directory. Hence
+   * the directory cannot be used to store other files.
+   *
+   * @param cacheDir A dedicated cache directory.
+   * @param evictor The evictor to be used.
+   * @param index The CachedContentIndex to be used.
+   */
+  /*package*/ SimpleCache(File cacheDir, CacheEvictor evictor, CachedContentIndex index) {
     this.cacheDir = cacheDir;
     this.evictor = evictor;
     this.lockedSpans = new HashMap<>();
-    this.index = new CachedContentIndex(cacheDir, secretKey, encrypt);
+    this.index = index;
     this.listeners = new HashMap<>();
     // Start cache initialization.
     final ConditionVariable conditionVariable = new ConditionVariable();
@@ -125,7 +137,7 @@ public final class SimpleCache implements Cache {
   public synchronized NavigableSet<CacheSpan> getCachedSpans(String key) {
     CachedContent cachedContent = index.get(key);
     return cachedContent == null || cachedContent.isEmpty() ? null
-        : new TreeSet<CacheSpan>(cachedContent.getSpans());
+            : new TreeSet<CacheSpan>(cachedContent.getSpans());
   }
 
   @Override
@@ -140,7 +152,7 @@ public final class SimpleCache implements Cache {
 
   @Override
   public synchronized SimpleCacheSpan startReadWrite(String key, long position)
-      throws InterruptedException, CacheException {
+          throws InterruptedException, CacheException {
     while (true) {
       SimpleCacheSpan span = startReadWriteNonBlocking(key, position);
       if (span != null) {
@@ -157,7 +169,7 @@ public final class SimpleCache implements Cache {
 
   @Override
   public synchronized SimpleCacheSpan startReadWriteNonBlocking(String key, long position)
-      throws CacheException {
+          throws CacheException {
     if (initializationException != null) {
       throw initializationException;
     }
@@ -184,7 +196,7 @@ public final class SimpleCache implements Cache {
 
   @Override
   public synchronized File startFile(String key, long position, long maxLength)
-      throws CacheException {
+          throws CacheException {
     Assertions.checkState(lockedSpans.containsKey(key));
     if (!cacheDir.exists()) {
       // For some reason the cache directory doesn't exist. Make a best effort to create it.
@@ -193,7 +205,7 @@ public final class SimpleCache implements Cache {
     }
     evictor.onStartFile(this, key, position, maxLength);
     return SimpleCacheSpan.getCacheFile(cacheDir, index.assignIdForKey(key), position,
-        System.currentTimeMillis());
+            System.currentTimeMillis());
   }
 
   @Override
@@ -276,7 +288,7 @@ public final class SimpleCache implements Cache {
         continue;
       }
       SimpleCacheSpan span = file.length() > 0
-          ? SimpleCacheSpan.createCacheEntry(file, index) : null;
+              ? SimpleCacheSpan.createCacheEntry(file, index) : null;
       if (span != null) {
         addSpan(span);
       } else {
@@ -305,11 +317,14 @@ public final class SimpleCache implements Cache {
       return;
     }
     totalSpace -= span.length;
-    if (removeEmptyCachedContent && cachedContent.isEmpty()) {
-      index.removeEmpty(cachedContent.key);
-      index.store();
+    try {
+      if (removeEmptyCachedContent && cachedContent.isEmpty()) {
+        index.removeEmpty(cachedContent.key);
+        index.store();
+      }
+    } finally {
+      notifySpanRemoved(span);
     }
-    notifySpanRemoved(span);
   }
 
   @Override
