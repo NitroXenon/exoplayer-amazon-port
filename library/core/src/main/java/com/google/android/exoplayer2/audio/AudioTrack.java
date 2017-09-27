@@ -22,6 +22,7 @@ import android.media.AudioManager;
 import android.media.AudioTimestamp;
 import android.os.ConditionVariable;
 import android.os.SystemClock;
+import android.support.annotation.IntDef;
 import android.util.Log;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.PlaybackParameters;
@@ -31,6 +32,9 @@ import com.google.android.exoplayer2.util.Assertions;
 import com.google.android.exoplayer2.util.MimeTypes;
 import com.google.android.exoplayer2.util.Util;
 import com.google.android.exoplayer2.util.Logger;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -248,6 +252,13 @@ public final class AudioTrack {
    */
   private static final long MAX_LATENCY_US = 5 * C.MICROS_PER_SECOND;
 
+  /**
+   * Represents states of the {@link #startMediaTimeUs} value.
+   */
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({START_NOT_SET, START_IN_SYNC, START_NEED_SYNC})
+  private @interface StartMediaTimeState {}
+
   private static final int START_NOT_SET = 0;
   private static final int START_IN_SYNC = 1;
   private static final int START_NEED_SYNC = 2;
@@ -299,10 +310,8 @@ public final class AudioTrack {
   private android.media.AudioTrack audioTrack;
   private int sampleRate;
   private int channelConfig;
-  @C.Encoding
-  private int encoding;
-  @C.Encoding
-  private int outputEncoding;
+  private @C.Encoding int encoding;
+  private @C.Encoding int outputEncoding;
   private AudioAttributes audioAttributes;
   private boolean passthrough;
   private int bufferSize;
@@ -331,7 +340,7 @@ public final class AudioTrack {
   private long writtenPcmBytes;
   private long writtenEncodedFrames;
   private int framesPerEncodedSample;
-  private int startMediaTimeState;
+  private @StartMediaTimeState int startMediaTimeState;
   private long startMediaTimeUs;
   private long resumeSystemTimeUs;
   private long latencyUs;
