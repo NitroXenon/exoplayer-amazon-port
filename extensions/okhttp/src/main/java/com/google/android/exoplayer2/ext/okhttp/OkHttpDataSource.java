@@ -40,6 +40,7 @@ import okhttp3.MediaType;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 /**
  * An {@link HttpDataSource} that delegates to Square's {@link Call.Factory}.
@@ -152,18 +153,14 @@ public class OkHttpDataSource implements HttpDataSource {
     requestProperties.clear();
   }
 
-  @Override
-  public long open(DataSpec dataSpec) throws HttpDataSourceException {
-    this.dataSpec = dataSpec;
-    this.bytesRead = 0;
-    this.bytesSkipped = 0;
+  public int request(boolean isRetry) throws HttpDataSourceException {
     Request request = makeRequest(dataSpec);
     try {
       response = callFactory.newCall(request).execute();
       responseByteStream = response.body().byteStream();
     } catch (IOException e) {
       throw new HttpDataSourceException("Unable to connect to " + dataSpec.uri.toString(), e,
-          dataSpec, HttpDataSourceException.TYPE_OPEN);
+              dataSpec, HttpDataSourceException.TYPE_OPEN);
     }
 
     int responseCode = response.code();
@@ -173,12 +170,24 @@ public class OkHttpDataSource implements HttpDataSource {
       Map<String, List<String>> headers = request.headers().toMultimap();
       closeConnectionQuietly();
       InvalidResponseCodeException exception = new InvalidResponseCodeException(
-          responseCode, headers, dataSpec);
+              responseCode, headers, dataSpec);
       if (responseCode == 416) {
         exception.initCause(new DataSourceException(DataSourceException.POSITION_OUT_OF_RANGE));
+      } else if (responseCode == 429 && !isRetry) {
+        return request(true); // Try again
       }
       throw exception;
     }
+    return responseCode;
+  }
+
+  @Override
+  public long open(DataSpec dataSpec) throws HttpDataSourceException {
+    this.dataSpec = dataSpec;
+    this.bytesRead = 0;
+    this.bytesSkipped = 0;
+
+    int responseCode = request(false);
 
     // Check for a valid content type.
     MediaType mediaType = response.body().contentType();
