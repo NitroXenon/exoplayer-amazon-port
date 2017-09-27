@@ -247,8 +247,11 @@ public final class MediaCodecUtil {
                 } else {
                   // Rethrow error querying primary codec capabilities, or secondary codec
                   // capabilities if API level is greater than 23.
-                  Log.e(TAG, "Failed to query codec " + codecName + " (" + supportedType + ")");
-                  throw e;
+                  String errMsg = "Failed to query codec " + codecName + " (" + supportedType + ")";
+                  Log.e(TAG, errMsg);
+
+                  // Don't throw error to break the loop
+                  //throw new IllegalArgumentException(errMsg, e);
                 }
               }
             }
