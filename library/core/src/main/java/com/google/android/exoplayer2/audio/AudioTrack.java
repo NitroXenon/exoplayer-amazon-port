@@ -666,7 +666,7 @@ public final class AudioTrack {
     } else {
       int minBufferSize =
           android.media.AudioTrack.getMinBufferSize(sampleRate, channelConfig, outputEncoding);
-      if (minBufferSize == ERROR_BAD_VALUE) {
+      if (minBufferSize == ERROR_BAD_VALUE && outputEncoding != C.ENCODING_PCM_16BIT) {
         // Fallback to PCM_16BIT
         minBufferSize = android.media.AudioTrack.getMinBufferSize(
                 sampleRate, channelConfig, C.ENCODING_PCM_16BIT);
