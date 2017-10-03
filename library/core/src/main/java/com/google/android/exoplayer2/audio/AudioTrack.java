@@ -521,6 +521,8 @@ public final class AudioTrack {
       log.v("positionUs = " + positionUs);
     }
 
+    positionUs = Math.min(positionUs, framesToDurationUs(getWrittenFrames()));
+
     return startMediaTimeUs + applySpeedup(positionUs);
   }
 
