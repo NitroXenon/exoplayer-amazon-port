@@ -158,6 +158,11 @@ public class ExoPlayerWrapper implements Player.EventListener {
   }
 
   @Override
+  public void onSeekProcessed() {
+
+  }
+
+  @Override
   public void onRepeatModeChanged(int repeatMode) {
     // Do nothing.
   }

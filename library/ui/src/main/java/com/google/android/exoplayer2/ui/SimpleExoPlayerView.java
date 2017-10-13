@@ -903,7 +903,7 @@ public final class SimpleExoPlayerView extends FrameLayout {
 
     @Override
     public void onSeekProcessed() {
-      
+
     }
 
     @Override
