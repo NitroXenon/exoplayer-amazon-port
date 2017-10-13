@@ -679,7 +679,7 @@ import java.io.IOException;
       // ignored.
       playbackInfo = new PlaybackInfo(0, C.TIME_UNSET);
       setState(Player.STATE_ENDED);
-      eventHandler.obtainMessage(MSG_SEEK_ACK, 1, 0, new PlaybackInfo(firstPeriodIndex, 0))
+      eventHandler.obtainMessage(MSG_SEEK_ACK, 1, 0, new PlaybackInfo(0, 0))
               .sendToTarget();
       // Reset, but retain the source so that it can still be used should a seek occur.
       resetInternal(false);
@@ -1156,7 +1156,7 @@ import java.io.IOException;
     playbackInfo = new PlaybackInfo(0, C.TIME_UNSET);
     setState(Player.STATE_ENDED);
     // Set the playback position to (0,0) for notifying the eventHandler.
-    notifySourceInfoRefresh(manifest, new PlaybackInfo(firstPeriodIndex, 0),
+    notifySourceInfoRefresh(manifest, new PlaybackInfo(0, 0),
             processedInitialSeekCount);
     // Reset, but retain the source so that it can still be used should a seek occur.
     resetInternal(false);
