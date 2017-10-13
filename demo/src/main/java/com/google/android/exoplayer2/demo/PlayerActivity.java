@@ -497,6 +497,11 @@ public class PlayerActivity extends Activity implements OnClickListener, EventLi
   }
 
   @Override
+  public void onSeekProcessed() {
+
+  }
+
+  @Override
   public void onRepeatModeChanged(int repeatMode) {
     // Do nothing.
   }
