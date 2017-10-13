@@ -294,7 +294,6 @@ import java.io.IOException;
       // Restore the interrupted status.
       Thread.currentThread().interrupt();
     }
-    internalPlaybackThread.quit();
   }
 
   public Looper getPlaybackLooper() {
@@ -814,6 +813,7 @@ import java.io.IOException;
     resetInternal(true);
     loadControl.onReleased();
     setState(Player.STATE_IDLE);
+    internalPlaybackThread.quit();
     synchronized (this) {
       released = true;
       notifyAll();
