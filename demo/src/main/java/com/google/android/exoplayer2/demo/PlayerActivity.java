@@ -358,7 +358,7 @@ public class PlayerActivity extends Activity implements OnClickListener, EventLi
   }
 
   private MediaSource buildMediaSource(Uri uri, String overrideExtension) {
-    int type = TextUtils.isEmpty(overrideExtension) ? Util.inferContentType(uri)
+    @C.ContentType int type = TextUtils.isEmpty(overrideExtension) ? Util.inferContentType(uri)
         : Util.inferContentType("." + overrideExtension);
     switch (type) {
       case C.TYPE_SS:
