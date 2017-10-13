@@ -902,6 +902,11 @@ public final class SimpleExoPlayerView extends FrameLayout {
     }
 
     @Override
+    public void onSeekProcessed() {
+      
+    }
+
+    @Override
     public void onRepeatModeChanged(int repeatMode) {
       // Do nothing.
     }

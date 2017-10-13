@@ -1099,6 +1099,11 @@ public class PlaybackControlView extends FrameLayout {
     }
 
     @Override
+    public void onSeekProcessed() {
+
+    }
+
+    @Override
     public void onRepeatModeChanged(int repeatMode) {
       updateRepeatModeButton();
       updateNavigation();
