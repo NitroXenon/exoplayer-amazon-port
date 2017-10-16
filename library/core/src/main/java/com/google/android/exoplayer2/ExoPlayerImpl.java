@@ -452,10 +452,11 @@ import java.util.concurrent.CopyOnWriteArraySet;
             maskingWindowIndex = 0;
             maskingWindowPositionMs = 0;
           }
-          if (msg.arg1 != 0) {
-            for (Player.EventListener listener : listeners) {
+          for (Player.EventListener listener : listeners) {
+            if (msg.arg1 != 0) {
               listener.onPositionDiscontinuity();
             }
+            listener.onSeekProcessed();
           }
         }
         break;
@@ -484,6 +485,11 @@ import java.util.concurrent.CopyOnWriteArraySet;
           }
           for (Player.EventListener listener : listeners) {
             listener.onTimelineChanged(timeline, manifest);
+          }
+        }
+        if (pendingSeekAcks == 0 && sourceInfo.seekAcks > 0) {
+          for (Player.EventListener listener : listeners) {
+            listener.onSeekProcessed();
           }
         }
         break;

@@ -608,6 +608,11 @@ public final class MediaSessionConnector {
     }
 
     @Override
+    public void onSeekProcessed() {
+
+    }
+
+    @Override
     public void onRepeatModeChanged(@Player.RepeatMode int repeatMode) {
       mediaSession.setRepeatMode(repeatMode == Player.REPEAT_MODE_ONE
           ? PlaybackStateCompat.REPEAT_MODE_ONE : repeatMode == Player.REPEAT_MODE_ALL

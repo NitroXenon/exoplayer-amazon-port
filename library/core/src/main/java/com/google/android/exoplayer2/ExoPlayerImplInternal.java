@@ -294,7 +294,6 @@ import java.io.IOException;
       // Restore the interrupted status.
       Thread.currentThread().interrupt();
     }
-    internalPlaybackThread.quit();
   }
 
   public Looper getPlaybackLooper() {
@@ -675,12 +674,12 @@ import java.io.IOException;
     if (periodPosition == null) {
       // The seek position was valid for the timeline that it was performed into, but the
       // timeline has changed and a suitable seek position could not be resolved in the new one.
-      playbackInfo = new PlaybackInfo(0, 0);
-      eventHandler.obtainMessage(MSG_SEEK_ACK, 1, 0, playbackInfo).sendToTarget();
       // Set the internal position to (0,TIME_UNSET) so that a subsequent seek to (0,0) isn't
       // ignored.
       playbackInfo = new PlaybackInfo(0, C.TIME_UNSET);
       setState(Player.STATE_ENDED);
+      eventHandler.obtainMessage(MSG_SEEK_ACK, 1, 0, new PlaybackInfo(0, 0))
+              .sendToTarget();
       // Reset, but retain the source so that it can still be used should a seek occur.
       resetInternal(false);
       return;
@@ -814,6 +813,7 @@ import java.io.IOException;
     resetInternal(true);
     loadControl.onReleased();
     setState(Player.STATE_IDLE);
+    internalPlaybackThread.quit();
     synchronized (this) {
       released = true;
       notifyAll();
@@ -1005,7 +1005,7 @@ import java.io.IOException;
           MediaPeriodId periodId =
               mediaPeriodInfoSequence.resolvePeriodPositionForAds(periodIndex, positionUs);
           playbackInfo = new PlaybackInfo(periodId, periodId.isAd() ? 0 : positionUs, positionUs);
-          notifySourceInfoRefresh(manifest, processedInitialSeekCount);
+          notifySourceInfoRefresh(manifest, playbackInfo, processedInitialSeekCount);
         }
       } else if (playbackInfo.startPositionUs == C.TIME_UNSET) {
         if (timeline.isEmpty()) {
@@ -1152,21 +1152,22 @@ import java.io.IOException;
 
   private void handleSourceInfoRefreshEndedPlayback(Object manifest,
       int processedInitialSeekCount) {
-    // Set the playback position to (0,0) for notifying the eventHandler.
-    playbackInfo = new PlaybackInfo(0, 0);
-    notifySourceInfoRefresh(manifest, processedInitialSeekCount);
     // Set the internal position to (0,TIME_UNSET) so that a subsequent seek to (0,0) isn't ignored.
     playbackInfo = new PlaybackInfo(0, C.TIME_UNSET);
     setState(Player.STATE_ENDED);
+    // Set the playback position to (0,0) for notifying the eventHandler.
+    notifySourceInfoRefresh(manifest, new PlaybackInfo(0, 0),
+            processedInitialSeekCount);
     // Reset, but retain the source so that it can still be used should a seek occur.
     resetInternal(false);
   }
 
   private void notifySourceInfoRefresh(Object manifest) {
-    notifySourceInfoRefresh(manifest, 0);
+    notifySourceInfoRefresh(manifest, playbackInfo, 0);
   }
 
-  private void notifySourceInfoRefresh(Object manifest, int processedInitialSeekCount) {
+  private void notifySourceInfoRefresh(Object manifest, PlaybackInfo playbackInfo,
+                                       int processedInitialSeekCount) {
     eventHandler.obtainMessage(MSG_SOURCE_INFO_REFRESHED,
         new SourceInfo(timeline, manifest, playbackInfo, processedInitialSeekCount)).sendToTarget();
   }

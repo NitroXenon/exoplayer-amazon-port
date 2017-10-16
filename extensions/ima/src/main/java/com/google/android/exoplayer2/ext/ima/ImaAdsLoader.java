@@ -562,6 +562,11 @@ public final class ImaAdsLoader implements Player.EventListener, VideoAdPlayer,
   }
 
   @Override
+  public void onSeekProcessed() {
+
+  }
+
+  @Override
   public void onRepeatModeChanged(int repeatMode) {
     // Do nothing.
   }
